@@ -1,0 +1,21 @@
+{
+    "mongo": {
+      "url": "mongodb://localhost",
+      "use_ssl": false,
+      "options": {
+        "useNewUrlParser": true
+      },
+      "jobsCollectionName": "jobs",
+      "jobOutcomeCollectionName": "jobOutcome",
+      "jobsDbName": "cognet2"
+    },
+    "rabbitmq": {
+      "url": "amqp://rabbitmq:rabbitmq@localhost",
+      "jobQueueSuffix": "jobs"
+    },
+    "redis": {
+      "url": "redis://127.0.0.1/0",
+      "jobResultsSuffix": "results"
+    },
+    "resourcePrefix": "dev"
+}

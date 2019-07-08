@@ -1,0 +1,14 @@
+{
+  "rules": {
+    // chai expect expressions like expect(x).to.be.true
+    "no-unused-expressions": 0,
+
+    // mocha prefers non-arrow callback in order to use the context
+    // https://mochajs.org/#arrow-functions
+    "prefer-arrow-callback": 0,
+    "func-names": 0
+  },
+  "env": {
+    "mocha": true
+  }
+}

@@ -1,0 +1,39 @@
+version: '3.3'
+
+services:
+  rabbit:
+    image: rabbitmq:3.7.15-management
+    container_name: carrot_rabbit
+    environment:
+      RABBITMQ_DEFAULT_USER: "rabbitmq"
+      RABBITMQ_DEFAULT_PASS: "rabbitmq"
+      RABBITMQ_DEFAULT_VHOST: "/"
+    ports:
+      - "5672:5672"
+      - "15672:15672"
+    networks:
+      - carrot
+
+  redis:
+    image: redis
+    container_name: carrot_redis
+    ports:
+      - "6379:6379"
+    networks:
+      - carrot
+
+  mongo:
+    image: mongo:4.0
+    container_name: carrot_mongo
+    ports:
+      - ${MONGO_HOST_PORT:-27017}:27017
+    networks:
+      - carrot
+
+volumes:
+  rabbitmq_research_mysql_data:
+    driver: local
+
+networks:
+  carrot:
+    external: true

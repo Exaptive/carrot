@@ -1,0 +1,33 @@
+{
+  "name": "carrot",
+  "version": "0.0.0",
+  "description": "Carrot is a cross-platform distributed work system",
+  "main": "carrot/js/carrot.js",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/Exaptive/carrot.git"
+  },
+  "scripts": {
+    "lint": "eslint carrot/js/ demo/ test/",
+    "test": "npm run test:integration",
+    "test:integration": "nyc mocha --expose-internals --recursive ./test/bootstrap.test.js ./test/integration",
+    "test:integration:jenkins": "npm run test:integration -- --reporter mocha-jenkins-reporter"
+  },
+  "author": "",
+  "license": "BSD-3-Clause",
+  "dependencies": {
+    "amqplib": "^0.5.3",
+    "events": "^3.0.0",
+    "ioredis": "^4.10.0",
+    "mongodb": "^3.2.7"
+  },
+  "devDependencies": {
+    "chai": "4.1.1",
+    "eslint": "^5.1.0",
+    "mocha": "^6.0.0",
+    "mocha-jenkins-reporter": "^0.3.8",
+    "nyc": "^11.7.1",
+    "sinon": "^7.3.0",
+    "sinon-chai": "^3.3.0"
+  }
+}
