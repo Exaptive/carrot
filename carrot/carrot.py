@@ -23,7 +23,6 @@ class Worker:
         self.redis = redis.Redis.from_url(config['redis']['url'])
         self.mongo = mongo.connect(config['mongo'])
         self.exchangeName = ''
-        self.channel.queue_declare(protocol.EVENT_QUEUE_NAME, durable=True)
         self.ready = True
 
     def register(self, jobType, workerCallback):
@@ -39,7 +38,7 @@ class Worker:
             'data': data,
         }
         self.channel.basic_publish(exchange=self.exchangeName,
-            routing_key=protocol.EVENT_QUEUE_NAME,
+            routing_key=jobInfo['eventReturnQueue'],
             body=json.dumps(eventInfo),
             properties=pika.BasicProperties(delivery_mode=2)) # persistent message
 
@@ -53,7 +52,7 @@ class Worker:
             'data': data,
         }
         self.channel.basic_publish(exchange=self.exchangeName,
-            routing_key=protocol.EVENT_QUEUE_NAME,
+            routing_key=jobInfo['eventReturnQueue'],
             body=json.dumps(eventInfo),
             properties=pika.BasicProperties(delivery_mode=2)) # persistent message
 
@@ -93,6 +92,10 @@ class Worker:
 
     def _callback(self, workerCallback, ch, method, properties, body):
         jobInfo = json.loads(body)
+        # make sure event queue exists for the worker
+        # it is more efficient to do this once per job than in reportProgress/reportDone
+        eventReturnQueue = jobInfo['eventReturnQueue']
+        self.channel.queue_declare(eventReturnQueue, durable=True)
         ack = workerCallback(jobInfo)
         if (ack):
             self.channel.basic_ack(delivery_tag=method.delivery_tag)

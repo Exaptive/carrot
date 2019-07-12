@@ -39,6 +39,7 @@ class Worker extends EventEmitter {
     const jobQueueName = _jobQueueName(this.config, jobType);
     await _initQueueListen(this.channel, jobQueueName, async jobInfo => {
       const jobInfoJson = _messageToJson(jobInfo);
+      await this.channel.assertQueue(jobInfoJson.eventReturnQueue, { durable: true });
       const ack = await workerCallback(jobInfoJson);
       if (ack) await this.channel.ack(jobInfo);
       await this.reportDone(jobInfoJson);
@@ -52,7 +53,6 @@ class Worker extends EventEmitter {
    * @param {Object} data
    */
   async reportProgress(jobInfo, progress, data = {}) {
-    await this.channel.assertQueue(protocol.EVENT_QUEUE_NAME, { durable: true });
     console.log(` [x] Reporting progress`);
     const eventInfo = {
       eventJobType: jobInfo.jobType,
@@ -61,7 +61,7 @@ class Worker extends EventEmitter {
       progress,
       data,
     };
-    await this.channel.sendToQueue(protocol.EVENT_QUEUE_NAME,
+    await this.channel.sendToQueue(jobInfo.eventReturnQueue,
       _jsonToBuffer(eventInfo), { persistent: true });
   }
 
@@ -72,7 +72,6 @@ class Worker extends EventEmitter {
    * @param {*} data
    */
   async reportDone(jobInfo, data = {}) {
-    await this.channel.assertQueue(protocol.EVENT_QUEUE_NAME, { durable: true });
     console.log(` [x] Reporting done`);
     const eventInfo = {
       eventJobType: jobInfo.jobType,
@@ -80,7 +79,7 @@ class Worker extends EventEmitter {
       eventType: protocol.DONE_EVENT_NAME,
       data,
     };
-    await this.channel.sendToQueue(protocol.EVENT_QUEUE_NAME,
+    await this.channel.sendToQueue(jobInfo.eventReturnQueue,
       _jsonToBuffer(eventInfo), { persistent: true });
   }
 
@@ -138,6 +137,7 @@ class Producer extends EventEmitter {
     this.broker = await amqp.connect(this.config.rabbitmq.url);
     this.channel = await this.broker.createChannel();
     this.redis = new Redis(this.config.redis.url);
+    this.eventReturnQueue = this.config.eventReturnQueue;
 
     this.initEventListener();
     this.broker.on('error', err => this.onBrokerError(err));
@@ -191,7 +191,8 @@ class Producer extends EventEmitter {
       dbName: this.config.mongo.jobsDbName,
       collectionName: this.config.mongo.jobsCollectionName });
 
-    const jobInfo = { jobType, args };
+    const eventReturnQueue = this.eventReturnQueue;
+    const jobInfo = { jobType, eventReturnQueue, args };
     const res = await jobCollection.insertOne(jobInfo);
 
     // update job in mongo based on job id
@@ -235,7 +236,7 @@ class Producer extends EventEmitter {
    *
    */
   async initEventListener() {
-    await _initQueueListen(this.channel, protocol.EVENT_QUEUE_NAME, async eventInfo => {
+    await _initQueueListen(this.channel, this.eventReturnQueue, async eventInfo => {
       const eventInfoJSON = _messageToJson(eventInfo);
       console.log(` [x] event: ${JSON.stringify(eventInfoJSON)}`);
       const eventType = eventInfoJSON.eventType;

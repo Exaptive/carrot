@@ -17,5 +17,6 @@
       "url": "redis://127.0.0.1/0",
       "jobResultsSuffix": "results"
     },
-    "resourcePrefix": "dev"
+    "resourcePrefix": "dev",
+    "eventReturnQueue": "demo-producer"
 }
