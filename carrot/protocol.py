@@ -1,3 +1,2 @@
-EVENT_QUEUE_NAME = 'events'
 PROGRESS_EVENT_NAME = 'progress'
 DONE_EVENT_NAME = 'done'

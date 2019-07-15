@@ -20,6 +20,7 @@ const config = {
     jobResultsSuffix: 'results',
   },
   resourcePrefix: 'test',
+  eventReturnQueue: 'test-producer',
 };
 
 module.exports = config;
