@@ -86,11 +86,11 @@ class Worker extends EventEmitter {
   /** Record the job results to redis and that it is finished in mongo
    *
    */
-  async saveResult({ jobInfoJson, success, result }) {
+  async saveResult({ jobInfoJson, success, output }) {
     // record result in redis
     const resultKey = _resultKey(this.config, jobInfoJson.jobId);
-    const _result = { ...result, success };
-    await this.redis.set(resultKey, JSON.stringify(_result));
+    const result = { success, output };
+    await this.redis.set(resultKey, JSON.stringify(result));
 
     // record job success/failure in mongo
     const outcomeCollection = await mongo.getCollection({

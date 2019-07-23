@@ -18,11 +18,11 @@ async function suggestionsHandler(jobInfo) {
   await sleep(200);
   client.reportProgress(jobInfo, 0.5);
   await sleep(200);
-  const result = { success: true, result: 'here is a result' };
+  const output = { calculation: 'here is a result' };
   const ack = client.saveResult({
     jobInfoJson: jobInfo,
     success: true,
-    result,
+    output,
   });
   return ack; // finished (ack so the job isn't repeated)
 }

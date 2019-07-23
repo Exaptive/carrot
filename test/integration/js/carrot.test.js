@@ -25,11 +25,11 @@ describe('carrot', function() {
     await sleep(2);
     workerClient1.reportProgress(jobInfo, 0.5);
     await sleep(2);
-    const result = { success: true, result: 'here is a result' };
+    const output = { calculation: 'here is a result' };
     const ack = workerClient1.saveResult({
       jobInfoJson: jobInfo,
       success: true,
-      result,
+      output,
     });
     return ack; // finished (ack so the job isn't repeated)
   }
@@ -59,7 +59,7 @@ describe('carrot', function() {
     await sleep(200);
     const result = await producerClient1.getResult(jobId);
     expect(result.success).to.equal(true);
-    expect(result.result).to.equal('here is a result');
+    expect(result.output.calculation).to.equal('here is a result');
   });
 
   it('should send progress and done events', async function() {
