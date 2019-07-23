@@ -56,13 +56,15 @@ class Worker:
             body=json.dumps(eventInfo),
             properties=pika.BasicProperties(delivery_mode=2)) # persistent message
 
-    def saveResult(self, jobInfo, success, result):
+    def saveResult(self, jobInfo, success, output):
         # record result in redis
         _id = ObjectId(jobInfo['jobId'])
         resultKey = self._resultKey(_id)
-        _result = copy.deepcopy(result)
-        _result['success'] = success
-        self.redis.set(resultKey, json.dumps(_result))
+        result = {
+            'success': success,
+            'output': output,
+        }
+        self.redis.set(resultKey, json.dumps(result))
 
         # record job success/failure in mongo
         mongo.update_record(

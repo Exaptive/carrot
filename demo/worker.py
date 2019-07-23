@@ -16,11 +16,11 @@ def suggestionsHandler(jobInfo):
   time.sleep(0.200)
   client.reportProgress(jobInfo, 0.5)
   time.sleep(0.200)
-  result = { 'success': True, 'result': 'here is a result' }
+  output = { 'calculation': 'here is a result' }
   ack = client.saveResult(
     jobInfo=jobInfo,
     success=True,
-    result=result)
+    output=output)
   return ack # finished (ack so the job isn't repeated)
 
 print('register...')
