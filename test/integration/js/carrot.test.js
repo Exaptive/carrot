@@ -36,9 +36,7 @@ describe('carrot', function() {
 
   this.beforeEach(async function() {
     producerClient1 = await carrot.createProducer(config);
-    workerClient1 = carrot.createWorker(config);
-    // eslint-disable-next-line no-await-in-loop
-    while (!producerClient1.ready || !workerClient1.ready) await sleep(2);
+    workerClient1 = await carrot.createWorker(config);
   });
   this.afterEach(async function() {
     await producerClient1.close();

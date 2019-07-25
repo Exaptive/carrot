@@ -13,17 +13,24 @@ const mongo = require('./mongo');
 class Worker extends EventEmitter {
   constructor(config) {
     super();
-    this.ready = false;
     this.config = config;
-    this.init();
   }
 
   async init() {
     this.broker = await amqp.connect(this.config.rabbitmq.url);
+    this.broker.on('error', err => this.onBrokerError(err));
+    this.broker.on('end', this.onBrokerEnd);
     this.channel = await this.broker.createChannel();
     this.redis = new Redis(this.config.redis.url);
-    this.ready = true;
-    this.emit('ready');
+  }
+  onBrokerError(err) {
+    console.log(' [x] broker error');
+    this.emit('error', err);
+  }
+
+  onBrokerEnd() {
+    console.log(' [x] broker end');
+    this.emit('end');
   }
 
   /** Register a worker callback for a particular job type to do the work
@@ -124,33 +131,20 @@ class Worker extends EventEmitter {
   }
 }
 
-
 class Producer extends EventEmitter {
   constructor(config) {
     super();
-    this.ready = false;
     this.config = config;
-    this.init();
   }
 
   async init() {
     this.broker = await amqp.connect(this.config.rabbitmq.url);
+    this.broker.on('error', err => this.onBrokerError(err));
+    this.broker.on('end', this.onBrokerEnd);
     this.channel = await this.broker.createChannel();
     this.redis = new Redis(this.config.redis.url);
     this.eventReturnQueue = this.config.eventReturnQueue;
-
-    this.initEventListener();
-    this.broker.on('error', err => this.onBrokerError(err));
-    this.broker.on('end', this.onBrokerEnd);
-    this.broker.on('ready', this.onBrokerReady);
-    this.ready = true;
-    this.emit('ready');
-  }
-
-  onBrokerReady() {
-    console.log(' [x] broker ready');
-    this.ready = true;
-    this.emit('ready');
+    await this.initEventListener();
   }
 
   onBrokerError(err) {
@@ -280,12 +274,16 @@ function _jsonToBuffer(json) {
   return Buffer.from(JSON.stringify(json));
 }
 
-function createWorker(config) {
-  return new Worker(config);
+async function createWorker(config) {
+  const worker = new Worker(config);
+  await worker.init();
+  return worker;
 }
 
-function createProducer(config) {
-  return new Producer(config);
+async function createProducer(config) {
+  const producer = new Producer(config);
+  await producer.init();
+  return producer;
 }
 
 function _jobQueueName(config, jobType) {
