@@ -14,8 +14,6 @@ function sleep(ms) {
 (async() => {
   const config = await loadConfig();
   const client = await carrot.createProducer(config);
-  // eslint-disable-next-line no-await-in-loop
-  while (!client.ready) await sleep(100);
   const jobType = 'suggestions';
   const jobInfo = {
     jobType,
@@ -32,6 +30,7 @@ function sleep(ms) {
     console.log(` [x] done: ${JSON.stringify(info)}`);
   });
 
+  console.log(' [x] Waiting 5 seconds to check the result, hold on...');
   await sleep(5000);
 
   const result = await client.getResult(jobId);

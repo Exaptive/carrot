@@ -8,6 +8,7 @@ const carrot = require('../carrot/js/carrot');
 function sleep(ms) {
   return new Promise(resolve => setTimeout(resolve, ms));
 }
+
 let client;
 
 async function suggestionsHandler(jobInfo) {
@@ -30,8 +31,6 @@ async function suggestionsHandler(jobInfo) {
 (async() => {
   const config = await loadConfig();
   client = await carrot.createWorker(config);
-  // eslint-disable-next-line no-await-in-loop
-  while (!client.ready) await sleep(100);
   const jobName = 'suggestions';
   await client.register(jobName, suggestionsHandler);
   await sleep(100000);
