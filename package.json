@@ -16,7 +16,7 @@
   "author": "",
   "license": "BSD-3-Clause",
   "dependencies": {
-    "amqplib": "^0.5.3",
+    "amqplib": "0.5.3",
     "events": "^3.0.0",
     "ioredis": "^4.10.0",
     "mongodb": "^3.2.7"
