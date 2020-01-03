@@ -96,7 +96,7 @@ class Worker extends EventEmitter {
    * @param {Object} obj.jobInfoJson - Job Info object.
    * @param {Boolean} obj.success - True if the job was successful, False otherwise.
    * @param {Object} obj.output - The resulting output. Stored in the redis result data.
-   * @param {?number} obj.output - The resulting output. Stored in the redis result data.
+   * @param {?number} obj.outputTtl - The number of seconds before expiring results from redis. Null or 0 for no expiration.
    * @param {Object.<string, string>} [obj.artifacts={}] - Key/value pair of URIs to artifacts and external resources. Stored in the job outcome data.
    */
   async saveResult({ jobInfoJson, success, output, outputTtl = null, artifacts = {} }) {
