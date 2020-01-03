@@ -92,12 +92,23 @@ class Worker extends EventEmitter {
 
   /** Record the job results to redis and that it is finished in mongo
    *
+   * @param {Object} obj - An object with result data.
+   * @param {Object} obj.jobInfoJson - Job Info object.
+   * @param {Boolean} obj.success - True if the job was successful, False otherwise.
+   * @param {Object} obj.output - The resulting output. Stored in the redis result data.
+   * @param {?number} obj.outputTtl - The number of seconds before expiring results from redis. Null or 0 for no expiration.
+   * @param {Object.<string, string>} [obj.artifacts={}] - Key/value pair of URIs to artifacts and external resources. Stored in the job outcome data.
    */
-  async saveResult({ jobInfoJson, success, output }) {
+  async saveResult({ jobInfoJson, success, output, outputTtl = null, artifacts = {} }) {
     // record result in redis
     const resultKey = _resultKey(this.config, jobInfoJson.jobId);
     const result = { success, output };
-    await this.redis.set(resultKey, JSON.stringify(result));
+
+    if (outputTtl > 0) {
+      await this.redis.set(resultKey, JSON.stringify(result), "EX", outputTtl);
+    } else {
+      await this.redis.set(resultKey, JSON.stringify(result));
+    }
 
     // record job success/failure in mongo
     const outcomeCollection = await mongo.getCollection({
@@ -109,6 +120,7 @@ class Worker extends EventEmitter {
       {
         $set: {
           success,
+          artifacts,
           updatedAt: _now(),
         },
         $setOnInsert: {
@@ -169,6 +181,19 @@ class Producer extends EventEmitter {
       console.error(error);
       throw new Error(error);
     }
+  }
+
+  /** Get the outcome of a job by ID
+   *
+   * @param {String} jobId
+   */
+  async getJobOutcome(jobId) {
+    const outcomeCollection = await mongo.getCollection({
+      config: this.config.mongo,
+      dbName: this.config.mongo.jobsDbName,
+      collectionName: this.config.mongo.jobOutcomeCollectionName });
+
+    return outcomeCollection.findOne({ _id: mongo.ObjectId(jobId) });
   }
 
   /** Submit a job to the worker pool

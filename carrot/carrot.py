@@ -56,7 +56,7 @@ class Worker:
             body=json.dumps(eventInfo),
             properties=pika.BasicProperties(delivery_mode=2)) # persistent message
 
-    def saveResult(self, jobInfo, success, output):
+    def saveResult(self, jobInfo, success, output, output_ttl = None, artifacts = {}):
         # record result in redis
         _id = ObjectId(jobInfo['jobId'])
         resultKey = self._resultKey(_id)
@@ -64,7 +64,10 @@ class Worker:
             'success': success,
             'output': output,
         }
-        self.redis.set(resultKey, json.dumps(result))
+        if output_ttl:
+            self.redis.set(resultKey, json.dumps(result), ex=output_ttl)
+        else:
+            self.redis.set(resultKey, json.dumps(result))
 
         # record job success/failure in mongo
         mongo.update_record(
@@ -75,6 +78,7 @@ class Worker:
             operation={
                 '$set': {
                     'success': success,
+                    'artifacts': artifacts,
                     'updatedAt': self._now(),
                 },
                 '$setOnInsert': {
