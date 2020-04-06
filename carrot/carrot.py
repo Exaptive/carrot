@@ -13,6 +13,8 @@ import json
 
 from bson.objectid import ObjectId
 import bson
+import threading
+import Queue
 
 class Worker:
     def __init__(self, config):
@@ -43,6 +45,8 @@ class Worker:
             properties=pika.BasicProperties(delivery_mode=2)) # persistent message
 
     def reportProgress(self, jobInfo, progress, data = {}):
+        broker = pika.BlockingConnection(pika.URLParameters(self.config['rabbitmq']['url']))
+        channel = broker.channel()
         print(' [x] Reporting progress')
         eventInfo = {
             'eventJobType': jobInfo['jobType'],
@@ -51,10 +55,11 @@ class Worker:
             'progress': progress,
             'data': data,
         }
-        self.channel.basic_publish(exchange=self.exchangeName,
+        channel.basic_publish(exchange=self.exchangeName,
             routing_key=jobInfo['eventReturnQueue'],
             body=json.dumps(eventInfo),
             properties=pika.BasicProperties(delivery_mode=2)) # persistent message
+        channel.close()
 
     def saveResult(self, jobInfo, success, output, output_ttl = None, artifacts = {}):
         # record result in redis
@@ -96,13 +101,33 @@ class Worker:
         self.broker.close()
         # the redis.Redis connection pool (self.redis) handles disconnect
 
+    def _threaded_callback(self, workerCallback, jobInfo, queue):
+        ack = workerCallback(jobInfo)
+        queue.put(ack)
+
     def _callback(self, workerCallback, ch, method, properties, body):
         jobInfo = json.loads(body)
         # make sure event queue exists for the worker
         # it is more efficient to do this once per job than in reportProgress/reportDone
         eventReturnQueue = jobInfo['eventReturnQueue']
         self.channel.queue_declare(eventReturnQueue, durable=True)
-        ack = workerCallback(jobInfo)
+
+        # Run the callback using a thread so the main thread can handle heartbeats
+        queue = Queue.Queue()
+        t = threading.Thread(
+            target=self._threaded_callback,
+            args=(workerCallback, jobInfo, queue)
+        )
+        t.start()
+
+        while t.is_alive():
+            # Give pika time to process other events
+            self.broker.process_data_events()
+
+            # Pause the loop, but in a safer way for pika and broker communication
+            self.broker.sleep(5)
+        ack = queue.get()
+
         if (ack):
             self.channel.basic_ack(delivery_tag=method.delivery_tag)
         self.reportDone(jobInfo)
