@@ -125,7 +125,7 @@ class Worker:
             self.broker.process_data_events()
 
             # Pause the loop, but in a safer way for pika and broker communication
-            self.broker.sleep(15)
+            self.broker.sleep(5)
         ack = queue.get()
 
         if (ack):
