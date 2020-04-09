@@ -234,7 +234,8 @@ class Producer extends EventEmitter {
     console.log(` [x] Sending: job ${jobId} of type ${jobType} to ${jobQueue}`);
     await this.channel.sendToQueue(jobQueue, _jsonToBuffer(jobInfo), { persistent: true });
     console.log(` [x] Sent: job ${jobId}`);
-    return jobId;
+    // .toString() to normalize mongo objectId instance to a string.
+    return jobId.toString();
   }
 
   onJobEvent(jobType, eventType, callback) {
