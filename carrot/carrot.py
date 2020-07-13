@@ -1,5 +1,4 @@
-import mongo
-import protocol
+from . import mongo, protocol
 
 import time
 import math
@@ -14,7 +13,7 @@ import json
 from bson.objectid import ObjectId
 import bson
 import threading
-import Queue
+import queue
 
 class Worker:
     def __init__(self, config):
@@ -113,10 +112,10 @@ class Worker:
         self.channel.queue_declare(eventReturnQueue, durable=True)
 
         # Run the callback using a thread so the main thread can handle heartbeats
-        queue = Queue.Queue()
+        _queue = queue.Queue()
         t = threading.Thread(
             target=self._threaded_callback,
-            args=(workerCallback, jobInfo, queue)
+            args=(workerCallback, jobInfo, _queue)
         )
         t.start()
 
@@ -126,7 +125,7 @@ class Worker:
 
             # Pause the loop, but in a safer way for pika and broker communication
             self.broker.sleep(5)
-        ack = queue.get()
+        ack = _queue.get()
 
         if (ack):
             self.channel.basic_ack(delivery_tag=method.delivery_tag)

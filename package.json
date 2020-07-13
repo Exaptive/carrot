@@ -1,6 +1,6 @@
 {
   "name": "carrot",
-  "version": "0.0.7",
+  "version": "0.1.0",
   "description": "Carrot is a cross-platform distributed work system",
   "main": "carrot/js/carrot.js",
   "repository": {
